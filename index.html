@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>泰國 GL CP 記憶翻牌大挑戰</title>
+  <!-- 載入 Confetti 彩花特效庫 -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+    body {
+      background-color: #fdf2f8;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      margin: 0;
+    }
+    h1 {
+      color: #db2777;
+      margin: 10px 0 5px 0;
+      font-size: 24px;
+      text-align: center;
+    }
+    .status-bar {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #831843;
+      background: #fce7f3;
+      padding: 8px 16px;
+      border-radius: 20px;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      max-width: 480px;
+      margin-bottom: 20px;
+      perspective: 1000px;
+    }
+
+    /* 翻牌卡片 3D 結構 */
+    .card {
+      background-color: transparent;
+      aspect-ratio: 1;
+      cursor: pointer;
+      perspective: 1000px;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.5s;
+      transform-style: preserve-3d;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .card.flipped .card-inner,
+    .card.matched .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 卡片背面 (未翻開) */
+    .card-back {
+      background: linear-gradient(135deg, #f472b6, #db2777);
+      border: 3px solid #ffffff;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    /* 卡片正面 (圖片) */
+    .card-front {
+      background-color: #fff;
+      border: 3px solid #f472b6;
+      transform: rotateY(180deg);
+    }
+
+    .card-front img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-front .name-tag {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(219, 39, 119, 0.85);
+      color: white;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 3px 0;
+      text-align: center;
+    }
+
+    .card.matched .card-front {
+      border-color: #10b981; /* 配對成功變綠框 */
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      background-color: #ec4899;
+      color: white;
+      transition: background 0.2s, transform 0.1s;
+      box-shadow: 0 4px 6px rgba(236, 72, 153, 0.3);
+    }
+
+    button:hover { background-color: #db2777; }
+
+    /* 結算 Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 25px;
+      border-radius: 20px;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+
+    .modal-content h2 { color: #db2777; margin-top: 0; }
+
+    .score-badge {
+      font-size: 18px;
+      font-weight: bold;
+      color: #9d174d;
+      margin: 15px 0;
+      padding: 12px;
+      background: #fce7f3;
+      border-radius: 12px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎴 泰國 GL CP 記憶翻牌大挑戰</h1>
+  
+  <div class="status-bar">
+    <span>⏱️ 時間：<span id="timer">0</span> 秒</span>
+    <span>翻牌：<span id="moves">0</span> 次</span>
+    <span>配對：<span id="progress">0</span> / 9 對</span>
+  </div>
+
+  <div class="grid-container" id="grid"></div>
+
+  <div class="controls">
+    <button onclick="initGame()">重新洗牌開始</button>
+  </div>
+
+  <!-- 詳細成績單 Modal -->
+  <div class="modal" id="report-modal">
+    <div class="modal-content">
+      <h2>🎉 恭喜通關！</h2>
+      <div class="score-badge" id="rank-badge">通關計算中...</div>
+      <button onclick="closeModal()" style="width: 100%;">再挑戰一次</button>
+    </div>
+  </div>
+
+  <script>
+    // 經確認的 9 組 CP 對應表
+    const rawData = [
+      { id: 1, name: "Lingling", img: "IMG_3907.jpeg" },
+      { id: 1, name: "Orm", img: "IMG_3908.jpeg" },
+      { id: 2, name: "Freen", img: "IMG_3882.jpeg" },
+      { id: 2, name: "Becky", img: "IMG_3884.jpeg" },
+      { id: 3, name: "Lena", img: "IMG_3885.jpeg" },
+      { id: 3, name: "Miu", img: "IMG_3887.jpeg" },
+      { id: 4, name: "Oom", img: "IMG_3888.jpeg" },
+      { id: 4, name: "Bam", img: "IMG_3889.jpeg" },
+      { id: 5, name: "Emi", img: "IMG_3891.jpeg" },
+      { id: 5, name: "Bonnie", img: "IMG_3892.jpeg" },
+      { id: 6, name: "Jan", img: "IMG_3893.jpeg" },
+      { id: 6, name: "JingJing", img: "IMG_3894.jpeg" },
+      { id: 7, name: "Namtan", img: "IMG_3901.jpeg" },
+      { id: 7, name: "Film", img: "IMG_3900.jpeg" },
+      { id: 8, name: "Milk", img: "IMG_3899.jpeg" },
+      { id: 8, name: "Love", img: "IMG_3897.jpeg" },
+      { id: 9, name: "Engfa", img: "IMG_3896.jpeg" },
+      { id: 9, name: "Charlotte", img: "IMG_3895.jpeg" }
+    ];
+
+    let cardsData = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let moves = 0;
+    let lockBoard = false;
+    let timerInterval = null;
+    let seconds = 0;
+
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      seconds = 0;
+      document.getElementById('timer').innerText = seconds;
+      timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').innerText = seconds;
+      }, 1000);
+    }
+
+    function initGame() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      flippedCards = [];
+      matchedPairs = 0;
+      moves = 0;
+      lockBoard = false;
+      
+      document.getElementById('moves').innerText = '0';
+      document.getElementById('progress').innerText = '0';
+
+      cardsData = shuffle(rawData.map((item, index) => ({ ...item, uid: index + "_" + Date.now() })));
+
+      cardsData.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.dataset.uid = item.uid;
+
+        card.innerHTML = `
+          <div class="card-inner">
+            <div class="card-back">💖</div>
+            <div class="card-front">
+              <img src="${item.img}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150?text=Image'">
+              <div class="name-tag">${item.name}</div>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('click', () => flipCard(card, item));
+        grid.appendChild(card);
+      });
+
+      startTimer();
+    }
+
+    function flipCard(card, item) {
+      // 防止重複點擊同一張、已配對卡片，或動畫冷卻中點擊
+      if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+
+      card.classList.add('flipped');
+      flippedCards.push({ card, item });
+
+      if (flippedCards.length === 2) {
+        moves++;
+        document.getElementById('moves').innerText = moves;
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [first, second] = flippedCards;
+      // 判定邏輯：同 CP ID 且不是自己本身（不同角色）
+      const isMatch = (first.item.id === second.item.id) && (first.item.name !== second.item.name);
+
+      if (isMatch) {
+        disableCards();
+      } else {
+        unflipCards();
+      }
+    }
+
+    function disableCards() {
+      flippedCards[0].card.classList.add('matched');
+      flippedCards[1].card.classList.add('matched');
+
+      matchedPairs++;
+      document.getElementById('progress').innerText = matchedPairs;
+      flippedCards = [];
+
+      // 少量彩花獎勵成功的單組配對
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 20, spread: 50, origin: { y: 0.7 } });
+      }
+
+      if (matchedPairs === 9) {
+        clearInterval(timerInterval);
+        setTimeout(showWinModal, 600);
+      }
+    }
+
+    function unflipCards() {
+      lockBoard = true;
+      setTimeout(() => {
+        flippedCards[0].card.classList.remove('flipped');
+        flippedCards[1].card.classList.remove('flipped');
+        flippedCards = [];
+        lockBoard = false;
+      }, 1000);
+    }
+
+    function showWinModal() {
+      const rankBadge = document.getElementById('rank-badge');
+      let title = "";
+      
+      if (moves <= 15) {
+        title = "👑 骨灰級 CP 腦神手！<br>記憶力強到離譜！";
+      } else if (moves <= 25) {
+        title = "🎉 CP 大師！<br>默契與記憶力俱佳！";
+      } else {
+        title = "👍 成功通關！<br>再接再厲創造更快紀錄！";
+      }
+
+      rankBadge.innerHTML = `${title}<br><br>⏱️ 時間：${seconds} 秒<br>🎯 翻牌數：${moves} 次`;
+      document.getElementById('report-modal').style.display = 'flex';
+
+      if (typeof confetti === 'function') {
+        confetti({ particleCount: 150, spread: 100 });
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('report-modal').style.display = 'none';
+      initGame();
+    }
+
+    window.onload = initGame;
+  </script>
+</body>
+</html>
