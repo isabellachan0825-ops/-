@@ -1,104 +1,165 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>泰國 GL CP 記憶翻牌大挑戰</title>
-  <!-- 載入 Confetti 彩花特效庫 -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <title>泰國 GL CP 盲盒極限記憶大挑戰 💕</title>
   <style>
     * {
       box-sizing: border-box;
-      font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+      margin: 0;
+      padding: 0;
+      font-family: "PingFang TC", "Microsoft JhengHei", -apple-system, sans-serif;
     }
+
     body {
-      background-color: #fdf2f8;
-      color: #333;
+      background: #111827;
+      color: #fff;
       display: flex;
       flex-direction: column;
       align-items: center;
+      min-height: 100vh;
       padding: 15px;
-      margin: 0;
+      overflow-x: hidden;
     }
+
+    /* 全螢幕大地震震動特效 */
+    body.earthquake {
+      animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
     h1 {
-      color: #db2777;
-      margin: 10px 0 5px 0;
-      font-size: 24px;
+      margin: 5px 0 10px 0;
+      color: #f472b6;
+      text-shadow: 0 0 10px rgba(244, 114, 182, 0.5);
+      font-size: 22px;
       text-align: center;
     }
+
     .status-bar {
       display: flex;
       gap: 15px;
       margin-bottom: 15px;
-      font-size: 15px;
-      font-weight: bold;
-      color: #831843;
-      background: #fce7f3;
+      font-size: 0.95rem;
+      background: #1f2937;
       padding: 8px 16px;
       border-radius: 20px;
+      border: 1px solid #374151;
     }
 
-    .grid-container {
+    .badge {
+      color: #fbbf24;
+      font-weight: bold;
+    }
+
+    /* 4x5 網格格局，剛好放下 20 張卡片 */
+    .game-board {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 10px;
-      width: 100%;
       max-width: 480px;
-      margin-bottom: 20px;
-      perspective: 1000px;
-    }
-
-    /* 翻牌卡片 3D 結構 */
-    .card {
-      background-color: transparent;
-      aspect-ratio: 1;
-      cursor: pointer;
-      perspective: 1000px;
-    }
-
-    .card-inner {
-      position: relative;
       width: 100%;
-      height: 100%;
-      text-align: center;
-      transition: transform 0.5s;
-      transform-style: preserve-3d;
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      perspective: 1000px;
     }
 
-    .card.flipped .card-inner,
-    .card.matched .card-inner {
+    .card {
+      aspect-ratio: 1;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.5s ease;
+      cursor: pointer;
+    }
+
+    .card.flipped {
       transform: rotateY(180deg);
     }
 
-    .card-front, .card-back {
+    .card.matched {
+      transform: rotateY(180deg);
+      opacity: 0.55;
+      cursor: default;
+    }
+
+    /* 大地震洗牌旋轉動畫 */
+    .card.shuffling {
+      animation: spinShuffle 0.6s ease-in-out;
+    }
+
+    @keyframes spinShuffle {
+      0% { transform: scale(1) rotate(0deg); }
+      50% { transform: scale(0.8) rotate(180deg); }
+      100% { transform: scale(1) rotate(360deg); }
+    }
+
+    .card-face {
       position: absolute;
       width: 100%;
       height: 100%;
-      -webkit-backface-visibility: hidden;
       backface-visibility: hidden;
       border-radius: 12px;
-      overflow: hidden;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
     }
 
-    /* 卡片背面 (未翻開) */
+    /* === 卡片背面 (A+C 設計: 拍立得質感手幅 + 斜向金屬流光) === */
     .card-back {
-      background: linear-gradient(135deg, #f472b6, #db2777);
-      border: 3px solid #ffffff;
-      color: white;
-      font-size: 28px;
-      font-weight: bold;
+      background: linear-gradient(135deg, #be185d 0%, #ec4899 100%);
+      border: 2px solid #fbcfe8;
     }
 
-    /* 卡片正面 (圖片) */
+    /* A 方案：雙對称印花手幅圖案 */
+    .card-back::before {
+      content: "🌸\a✦ GL ✦\a🌸";
+      white-space: pre;
+      text-align: center;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 1px;
+      line-height: 1.2;
+      opacity: 0.9;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    /* C 方案：斜向金屬流光動畫 */
+    .card-back::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.35) 50%,
+        transparent 60%
+      );
+      animation: shimmer 3.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%) translateY(-100%); }
+      100% { transform: translateX(100%) translateY(100%); }
+    }
+
+    /* === 卡片正面 === */
     .card-front {
-      background-color: #fff;
-      border: 3px solid #f472b6;
+      background: #fff;
+      color: #333;
       transform: rotateY(180deg);
+      border: 2px solid #f472b6;
     }
 
     .card-front img {
@@ -113,99 +174,92 @@
       width: 100%;
       background: rgba(219, 39, 119, 0.85);
       color: white;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: bold;
-      padding: 3px 0;
+      padding: 2px 0;
       text-align: center;
     }
 
-    .card.matched .card-front {
-      border-color: #10b981; /* 配對成功變綠框 */
-    }
-
-    .controls {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 20px;
-    }
-
-    button {
-      padding: 10px 24px;
-      font-size: 16px;
+    /* 特殊卡片正面樣式 */
+    .card-front.rival {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
       font-weight: bold;
-      border: none;
-      border-radius: 25px;
-      cursor: pointer;
-      background-color: #ec4899;
-      color: white;
-      transition: background 0.2s, transform 0.1s;
-      box-shadow: 0 4px 6px rgba(236, 72, 153, 0.3);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 5px;
     }
 
-    button:hover { background-color: #db2777; }
+    .card-front.shuffle {
+      background: #fef3c7;
+      color: #92400e;
+      border: 2px solid #f59e0b;
+      font-weight: bold;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 5px;
+    }
 
-    /* 結算 Modal */
-    .modal {
-      display: none;
+    /* 訊息提示 Toast */
+    .toast {
       position: fixed;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
+      top: 20px;
+      background: #ef4444;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.3s ease;
+      pointer-events: none;
       z-index: 100;
     }
 
-    .modal-content {
-      background: white;
-      padding: 25px;
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.combo { background: #10b981; }
+    .toast.shuffle { background: #f59e0b; }
+
+    .controls { margin-top: 15px; }
+
+    button {
+      background: #ec4899;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      font-size: 1rem;
       border-radius: 20px;
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    }
-
-    .modal-content h2 { color: #db2777; margin-top: 0; }
-
-    .score-badge {
-      font-size: 18px;
+      cursor: pointer;
       font-weight: bold;
-      color: #9d174d;
-      margin: 15px 0;
-      padding: 12px;
-      background: #fce7f3;
-      border-radius: 12px;
-      line-height: 1.5;
+      transition: background 0.2s;
     }
+
+    button:hover { background: #be185d; }
   </style>
 </head>
 <body>
 
-  <h1>🎴 泰國 GL CP 記憶翻牌大挑戰</h1>
-  
+  <h1>🌸 GL CP 盲盒極限記憶大挑戰</h1>
+
   <div class="status-bar">
-    <span>⏱️ 時間：<span id="timer">0</span> 秒</span>
-    <span>翻牌：<span id="moves">0</span> 次</span>
-    <span>配對：<span id="progress">0</span> / 9 對</span>
+    <div>配對: <span id="matches" class="badge">0 / 9</span></div>
+    <div>Combo: <span id="combo" class="badge">0</span></div>
+    <div>步數: <span id="moves" class="badge">0</span></div>
   </div>
 
-  <div class="grid-container" id="grid"></div>
+  <div class="game-board" id="board"></div>
 
   <div class="controls">
-    <button onclick="initGame()">重新洗牌開始</button>
+    <button onclick="initGame()">重新開局</button>
   </div>
 
-  <!-- 詳細成績單 Modal -->
-  <div class="modal" id="report-modal">
-    <div class="modal-content">
-      <h2>🎉 恭喜通關！</h2>
-      <div class="score-badge" id="rank-badge">通關計算中...</div>
-      <button onclick="closeModal()" style="width: 100%;">再挑戰一次</button>
-    </div>
-  </div>
+  <div id="toast" class="toast"></div>
 
   <script>
-    // 經確認的 9 組 CP 對應表
+    // 9 對 100% 精確檔名 CP 資料
     const rawData = [
       { id: 1, name: "Lingling", img: "IMG_3907.jpeg" },
       { id: 1, name: "Orm", img: "IMG_3908.jpeg" },
@@ -230,141 +284,233 @@
     let cardsData = [];
     let flippedCards = [];
     let matchedPairs = 0;
+    let comboCount = 0;
     let moves = 0;
     let lockBoard = false;
-    let timerInterval = null;
-    let seconds = 0;
-
-    function shuffle(array) {
-      return array.sort(() => Math.random() - 0.5);
-    }
-
-    function startTimer() {
-      clearInterval(timerInterval);
-      seconds = 0;
-      document.getElementById('timer').innerText = seconds;
-      timerInterval = setInterval(() => {
-        seconds++;
-        document.getElementById('timer').innerText = seconds;
-      }, 1000);
-    }
 
     function initGame() {
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
+      const board = document.getElementById('board');
+      board.innerHTML = '';
       flippedCards = [];
       matchedPairs = 0;
+      comboCount = 0;
       moves = 0;
       lockBoard = false;
       
-      document.getElementById('moves').innerText = '0';
-      document.getElementById('progress').innerText = '0';
+      updateStatus();
 
-      cardsData = shuffle(rawData.map((item, index) => ({ ...item, uid: index + "_" + Date.now() })));
+      // 18 張 CP 照片 + 1 張狗仔卡 + 1 張大地震洗牌卡 = 共 20 張卡片 (剛好 4x5 滿格)
+      let deck = rawData.map(item => ({ ...item, type: 'cp', isMatched: false }));
 
-      cardsData.forEach(item => {
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.dataset.uid = item.uid;
+      deck.push({ id: 'rival', name: "📸 狗仔偷拍", type: 'rival', isMatched: false });
+      deck.push({ id: 'shuffle', name: "🔀 大地震洗牌", type: 'shuffle', isMatched: false });
 
-        card.innerHTML = `
-          <div class="card-inner">
-            <div class="card-back">💖</div>
-            <div class="card-front">
-              <img src="${item.img}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150?text=Image'">
-              <div class="name-tag">${item.name}</div>
-            </div>
-          </div>
-        `;
+      // 洗牌
+      cardsData = deck.sort(() => Math.random() - 0.5);
 
-        card.addEventListener('click', () => flipCard(card, item));
-        grid.appendChild(card);
-      });
+      renderBoard();
 
-      startTimer();
+      // 開局 1.2 秒全場開眼微記憶預覽
+      lockBoard = true;
+      setTimeout(() => {
+        document.querySelectorAll('.card').forEach(c => c.classList.add('flipped'));
+        setTimeout(() => {
+          document.querySelectorAll('.card').forEach(c => c.classList.remove('flipped'));
+          lockBoard = false;
+        }, 1200);
+      }, 300);
     }
 
-    function flipCard(card, item) {
-      // 防止重複點擊同一張、已配對卡片，或動畫冷卻中點擊
+    function renderBoard() {
+      const board = document.getElementById('board');
+      board.innerHTML = '';
+
+      cardsData.forEach((data, index) => {
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.dataset.index = index;
+
+        if (data.isMatched) {
+          card.classList.add('matched');
+        }
+
+        let frontHTML = '';
+        if (data.type === 'cp') {
+          frontHTML = `
+            <div class="card-face card-front">
+              <img src="${data.img}" alt="${data.name}" onerror="this.src='https://via.placeholder.com/150?text=Image'">
+              <div class="name-tag">${data.name}</div>
+            </div>`;
+        } else if (data.type === 'rival') {
+          frontHTML = `<div class="card-face card-front rival">📸<br>狗仔偷拍</div>`;
+        } else if (data.type === 'shuffle') {
+          frontHTML = `<div class="card-face card-front shuffle">🔀<br>大地震洗牌</div>`;
+        }
+
+        card.innerHTML = `<div class="card-face card-back"></div>` + frontHTML;
+
+        card.addEventListener('click', () => handleCardClick(card, data, index));
+        board.appendChild(card);
+      });
+    }
+
+    function handleCardClick(card, data, index) {
       if (lockBoard || card.classList.contains('flipped') || card.classList.contains('matched')) return;
 
       card.classList.add('flipped');
-      flippedCards.push({ card, item });
+
+      // 💣 翻到狗仔偷拍卡
+      if (data.type === 'rival') {
+        lockBoard = true;
+        comboCount = 0;
+        updateStatus();
+        showToast("💣 翻到狗仔偷拍！一組 CP 被強制拆散！", "rival");
+
+        setTimeout(() => {
+          card.classList.remove('flipped');
+          
+          // 強制拆散一組已配對的 CP
+          const matchedIndices = cardsData.reduce((acc, curr, idx) => {
+            if (curr.isMatched) acc.push(idx);
+            return acc;
+          }, []);
+
+          if (matchedIndices.length >= 2) {
+            const targetId = cardsData[matchedIndices[0]].id;
+            cardsData.forEach(c => {
+              if (c.id === targetId) c.isMatched = false;
+            });
+            matchedPairs--;
+            renderBoard();
+            updateStatus();
+          }
+          
+          lockBoard = false;
+        }, 1200);
+        return;
+      }
+
+      // 🔀 翻到大地震洗牌卡
+      if (data.type === 'shuffle') {
+        lockBoard = true;
+        comboCount = 0;
+        updateStatus();
+        
+        document.body.classList.add('earthquake');
+        showToast("🔀 觸發「大地震」！未配對卡片重新洗牌！", "shuffle");
+
+        setTimeout(() => {
+          document.body.classList.remove('earthquake');
+          card.classList.remove('flipped');
+          triggerEarthquakeShuffle();
+        }, 1000);
+        return;
+      }
+
+      // 一般 CP 卡翻牌邏輯
+      flippedCards.push({ card, data, index });
 
       if (flippedCards.length === 2) {
         moves++;
-        document.getElementById('moves').innerText = moves;
-        checkMatch();
+        lockBoard = true;
+        const [first, second] = flippedCards;
+
+        // 判定：同 CP ID 且不是同一張卡（不同角色）
+        const isMatch = (first.data.id === second.data.id) && (first.data.name !== second.data.name);
+
+        if (isMatch) {
+          first.card.classList.add('matched');
+          second.card.classList.add('matched');
+          cardsData[first.index].isMatched = true;
+          cardsData[second.index].isMatched = true;
+
+          matchedPairs++;
+          comboCount++;
+
+          // 連續成功 2 次開啟透視眼
+          if (comboCount >= 2) {
+            showToast(`🔥 Combo x${comboCount}！啟動「透視眼」閃爍！`, "combo");
+            triggerXRayVision();
+          }
+
+          resetTurn();
+          if (matchedPairs === 9) {
+            setTimeout(() => alert("🎉 恭喜通關！成功將 9 對 CP 全部配對完成！"), 500);
+          }
+        } else {
+          comboCount = 0;
+          setTimeout(() => {
+            first.card.classList.remove('flipped');
+            second.card.classList.remove('flipped');
+            resetTurn();
+          }, 1000);
+        }
+        updateStatus();
       }
     }
 
-    function checkMatch() {
-      const [first, second] = flippedCards;
-      // 判定邏輯：同 CP ID 且不是自己本身（不同角色）
-      const isMatch = (first.item.id === second.item.id) && (first.item.name !== second.item.name);
+    // 大地震洗牌
+    function triggerEarthquakeShuffle() {
+      let unMatchedIndices = [];
+      let unMatchedData = [];
 
-      if (isMatch) {
-        disableCards();
-      } else {
-        unflipCards();
-      }
-    }
+      cardsData.forEach((item, idx) => {
+        if (!item.isMatched) {
+          unMatchedIndices.push(idx);
+          unMatchedData.push(item);
+        }
+      });
 
-    function disableCards() {
-      flippedCards[0].card.classList.add('matched');
-      flippedCards[1].card.classList.add('matched');
+      unMatchedData.sort(() => Math.random() - 0.5);
 
-      matchedPairs++;
-      document.getElementById('progress').innerText = matchedPairs;
-      flippedCards = [];
+      unMatchedIndices.forEach((targetIdx, i) => {
+        cardsData[targetIdx] = unMatchedData[i];
+      });
 
-      // 少量彩花獎勵成功的單組配對
-      if (typeof confetti === 'function') {
-        confetti({ particleCount: 20, spread: 50, origin: { y: 0.7 } });
-      }
+      const allCards = document.querySelectorAll('.card:not(.matched)');
+      allCards.forEach(c => c.classList.add('shuffling'));
 
-      if (matchedPairs === 9) {
-        clearInterval(timerInterval);
-        setTimeout(showWinModal, 600);
-      }
-    }
-
-    function unflipCards() {
-      lockBoard = true;
       setTimeout(() => {
-        flippedCards[0].card.classList.remove('flipped');
-        flippedCards[1].card.classList.remove('flipped');
-        flippedCards = [];
+        renderBoard();
         lockBoard = false;
-      }, 1000);
+      }, 600);
     }
 
-    function showWinModal() {
-      const rankBadge = document.getElementById('rank-badge');
-      let title = "";
-      
-      if (moves <= 15) {
-        title = "👑 骨灰級 CP 腦神手！<br>記憶力強到離譜！";
-      } else if (moves <= 25) {
-        title = "🎉 CP 大師！<br>默契與記憶力俱佳！";
-      } else {
-        title = "👍 成功通關！<br>再接再厲創造更快紀錄！";
-      }
+    // 透視眼技能
+    function triggerXRayVision() {
+      const unMatchedCards = Array.from(document.querySelectorAll('.card:not(.matched):not(.flipped)'));
+      if (unMatchedCards.length < 2) return;
 
-      rankBadge.innerHTML = `${title}<br><br>⏱️ 時間：${seconds} 秒<br>🎯 翻牌數：${moves} 次`;
-      document.getElementById('report-modal').style.display = 'flex';
+      const shuffled = unMatchedCards.sort(() => Math.random() - 0.5);
+      const peekCards = [shuffled[0], shuffled[1]];
 
-      if (typeof confetti === 'function') {
-        confetti({ particleCount: 150, spread: 100 });
-      }
+      setTimeout(() => {
+        peekCards.forEach(c => c.classList.add('flipped'));
+        setTimeout(() => {
+          peekCards.forEach(c => c.classList.remove('flipped'));
+        }, 600);
+      }, 400);
     }
 
-    function closeModal() {
-      document.getElementById('report-modal').style.display = 'none';
-      initGame();
+    function resetTurn() {
+      flippedCards = [];
+      lockBoard = false;
     }
 
-    window.onload = initGame;
+    function updateStatus() {
+      document.getElementById('matches').innerText = `${matchedPairs} / 9`;
+      document.getElementById('combo').innerText = comboCount;
+      document.getElementById('moves').innerText = moves;
+    }
+
+    function showToast(msg, type = '') {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.className = `toast show ${type}`;
+      setTimeout(() => { toast.className = 'toast'; }, 2200);
+    }
+
+    initGame();
   </script>
 </body>
 </html>
