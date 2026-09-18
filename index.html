@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>泰國 GL CP 盲盒極限記憶大挑戰 💕</title>
+  <title>泰劇 CP 盲盒極限記憶大挑戰 💕</title>
   <style>
     * {
       box-sizing: border-box;
@@ -45,13 +45,15 @@
 
     .status-bar {
       display: flex;
-      gap: 15px;
+      gap: 12px;
       margin-bottom: 15px;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       background: #1f2937;
       padding: 8px 16px;
       border-radius: 20px;
       border: 1px solid #374151;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     .badge {
@@ -59,7 +61,7 @@
       font-weight: bold;
     }
 
-    /* 4x5 網格格局，剛好放下 20 張卡片 */
+    /* 4x5 網格格局，放 20 張卡片 */
     .game-board {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -112,15 +114,15 @@
       overflow: hidden;
     }
 
-    /* === 卡片背面 (A+C 設計: 拍立得質感手幅 + 斜向金屬流光) === */
+    /* === 卡片背面設計 (無 GL 字樣，保留 A+C 質感與斜向金屬流光) === */
     .card-back {
       background: linear-gradient(135deg, #be185d 0%, #ec4899 100%);
       border: 2px solid #fbcfe8;
     }
 
-    /* A 方案：雙對称印花手幅圖案 */
+    /* 印花手幅圖案：已移除 GL 文字，改為 CP */
     .card-back::before {
-      content: "🌸\a✦ GL ✦\a🌸";
+      content: "🌸\a✦ CP ✦\a🌸";
       white-space: pre;
       text-align: center;
       font-size: 0.8rem;
@@ -132,7 +134,7 @@
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    /* C 方案：斜向金屬流光動畫 */
+    /* 斜向金屬流光動畫 */
     .card-back::after {
       content: "";
       position: absolute;
@@ -242,9 +244,10 @@
 </head>
 <body>
 
-  <h1>🌸 GL CP 盲盒極限記憶大挑戰</h1>
+  <h1>🌸 泰劇 CP 盲盒極限記憶大挑戰</h1>
 
   <div class="status-bar">
+    <div>⏱️ 時間: <span id="timer" class="badge">0</span> 秒</div>
     <div>配對: <span id="matches" class="badge">0 / 9</span></div>
     <div>Combo: <span id="combo" class="badge">0</span></div>
     <div>步數: <span id="moves" class="badge">0</span></div>
@@ -259,7 +262,7 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // 9 對 100% 精確檔名 CP 資料
+    // 9 對精確檔名 CP 資料
     const rawData = [
       { id: 1, name: "Lingling", img: "IMG_3907.jpeg" },
       { id: 1, name: "Orm", img: "IMG_3908.jpeg" },
@@ -287,6 +290,18 @@
     let comboCount = 0;
     let moves = 0;
     let lockBoard = false;
+    let timerInterval = null;
+    let seconds = 0;
+
+    function startTimer() {
+      clearInterval(timerInterval);
+      seconds = 0;
+      document.getElementById('timer').innerText = seconds;
+      timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById('timer').innerText = seconds;
+      }, 1000);
+    }
 
     function initGame() {
       const board = document.getElementById('board');
@@ -298,27 +313,19 @@
       lockBoard = false;
       
       updateStatus();
+      startTimer(); // 啟動計時器
 
-      // 18 張 CP 照片 + 1 張狗仔卡 + 1 張大地震洗牌卡 = 共 20 張卡片 (剛好 4x5 滿格)
+      // 18 張 CP 照片 + 1 張狗仔卡 + 1 張大地震洗牌卡 = 20 張卡片
       let deck = rawData.map(item => ({ ...item, type: 'cp', isMatched: false }));
 
       deck.push({ id: 'rival', name: "📸 狗仔偷拍", type: 'rival', isMatched: false });
       deck.push({ id: 'shuffle', name: "🔀 大地震洗牌", type: 'shuffle', isMatched: false });
 
-      // 洗牌
+      // 隨機洗牌
       cardsData = deck.sort(() => Math.random() - 0.5);
 
       renderBoard();
-
-      // 開局 1.2 秒全場開眼微記憶預覽
-      lockBoard = true;
-      setTimeout(() => {
-        document.querySelectorAll('.card').forEach(c => c.classList.add('flipped'));
-        setTimeout(() => {
-          document.querySelectorAll('.card').forEach(c => c.classList.remove('flipped'));
-          lockBoard = false;
-        }, 1200);
-      }, 300);
+      // 已移除剛開始的透視亮卡預覽，保持直接蓋牌狀態
     }
 
     function renderBoard() {
@@ -435,7 +442,8 @@
 
           resetTurn();
           if (matchedPairs === 9) {
-            setTimeout(() => alert("🎉 恭喜通關！成功將 9 對 CP 全部配對完成！"), 500);
+            clearInterval(timerInterval); // 停止計時
+            setTimeout(() => alert(`🎉 恭喜通關！耗時 ${seconds} 秒，共用了 ${moves} 步成功配對所有 CP！`), 500);
           }
         } else {
           comboCount = 0;
@@ -476,7 +484,7 @@
       }, 600);
     }
 
-    // 透視眼技能
+    // 連擊透視眼技能
     function triggerXRayVision() {
       const unMatchedCards = Array.from(document.querySelectorAll('.card:not(.matched):not(.flipped)'));
       if (unMatchedCards.length < 2) return;
